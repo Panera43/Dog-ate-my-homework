@@ -25,6 +25,8 @@ CORS(app)
 dynamodb = boto3.resource('dynamodb', region_name='us-east-1')  # Change region if needed
 table = dynamodb.Table('Tasks')  # Your DynamoDB table name
 
+#intializing s3 client
+s3_client = boto3.client('s3', region_name='us-east-1')
 # Helper function to convert DynamoDB Decimal to regular numbers
 def decimal_to_number(obj):
     if isinstance(obj, list):
@@ -35,6 +37,30 @@ def decimal_to_number(obj):
         return int(obj) if obj % 1 == 0 else float(obj)
     else:
         return obj
+
+
+# Initialize S3 client
+@app.route('/get-presigned-url', methods=['POST'])
+def get_presigned_url():
+    #Generates a presigned URL for direct S3 upload from Flutter
+    try:
+        data = request.json
+        file_name = data.get('file_name', f"photo-{uuid.uuid4()}.jpg")
+       
+        # Generate presigned URL (valid for 15 minutes)
+        presigned_url = s3_client.generate_presigned_post(
+            Bucket='dogate-photos',
+            Key=file_name,
+            ExpiresIn=900  # 15 minutes
+        )
+       
+        return jsonify({
+            "presigned_url": presigned_url['url'],
+            "fields": presigned_url['fields'],
+            "s3_url": f"https://dogate-photos.s3.us-east-1.amazonaws.com/{file_name}"
+        }), 200
+    except Exception as e:
+        return jsonify({"error": f"Failed to generate presigned URL: {str(e)}"}), 500
 
 @app.route('/')
 def home():
