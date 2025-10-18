@@ -105,6 +105,7 @@ Resources:
         ZipFile: |
           import { DynamoDBClient, PutItemCommand, QueryCommand, UpdateItemCommand, DeleteItemCommand } from "@aws-sdk/client-dynamodb";
           import { marshall, unmarshall } from "@aws-sdk/util-dynamodb";
+          import { randomUUID } from "node:crypto";
           const ddb = new DynamoDBClient({});
           const json = (status, body, origin="*") => ({
             statusCode: status,
@@ -113,12 +114,13 @@ Resources:
           });
           export const handler = async (event) => {
             const origin = "*";
-            if (event.requestContext.http?.method === "OPTIONS") return json(200, {}, origin);
+            const method = event.requestContext.http?.method || event.httpMethod;
+            if (method === "OPTIONS") return json(200, {}, origin);
             const userId = event.headers?.["x-user-id"] || event.headers?.["X-User-Id"];
             if (!userId) return json(400, { error:"missing x-user-id" }, origin);
-            const action = event.queryStringParameters?.action || (event.httpMethod==="GET"?"list":null);
+            const action = event.queryStringParameters?.action || (method==="GET"?"list":null);
             try {
-              if (event.httpMethod === "GET" && action === "list") {
+              if (method === "GET" && action === "list") {
                 const q = await ddb.send(new QueryCommand({
                   TableName: process.env.TASKS_TABLE,
                   KeyConditionExpression: "userId = :u",
@@ -127,14 +129,14 @@ Resources:
                 const items = q.Items?.map(unmarshall).filter(t => !t.completedAt) || [];
                 return json(200, items, origin);
               }
-              if (event.httpMethod === "POST" && action === "create") {
+              if (method === "POST" && action === "create") {
                 const body = JSON.parse(event.body||"{}");
-                const taskId = crypto.randomUUID();
+                const taskId = randomUUID();
                 const item = { userId, taskId, title: body.title||"Task", active: true, createdAt: new Date().toISOString() };
                 await ddb.send(new PutItemCommand({ TableName: process.env.TASKS_TABLE, Item: marshall(item) }));
                 return json(200, item, origin);
               }
-              if (event.httpMethod === "PUT" && action === "update") {
+              if (method === "PUT" && action === "update") {
                 const body = JSON.parse(event.body||"{}");
                 const { taskId, title, active } = body;
                 const expr = []; const vals = {};
@@ -148,7 +150,7 @@ Resources:
                 }));
                 return json(200, { ok:true }, origin);
               }
-              if (event.httpMethod === "DELETE" && action === "delete") {
+              if (method === "DELETE" && action === "delete") {
                 const { taskId } = JSON.parse(event.body||"{}");
                 await ddb.send(new DeleteItemCommand({
                   TableName: process.env.TASKS_TABLE,
@@ -156,7 +158,7 @@ Resources:
                 }));
                 return json(200, { ok:true }, origin);
               }
-              if (event.httpMethod === "POST" && action === "complete") {
+              if (method === "POST" && action === "complete") {
                 const { taskId, photoKey } = JSON.parse(event.body||"{}");
                 const now = new Date().toISOString();
                 await ddb.send(new UpdateItemCommand({
@@ -165,7 +167,7 @@ Resources:
                   UpdateExpression: "SET completedAt=:c",
                   ExpressionAttributeValues: { ":c": { S: now } }
                 }));
-                const submissionId = crypto.randomUUID();
+                const submissionId = randomUUID();
                 const sub = { userId, submissionId, taskId, photoKey, createdAt: now };
                 await ddb.send(new PutItemCommand({ TableName: process.env.SUBS_TABLE, Item: marshall(sub) }));
                 await ddb.send(new UpdateItemCommand({
@@ -191,7 +193,7 @@ Resources:
       AuthType: NONE
       Cors:
         AllowOrigins: [ !Ref CORSOrigin ]
-        AllowMethods: [ "GET", "POST", "PUT", "DELETE", "OPTIONS" ]
+        AllowMethods: [ "GET", "POST", "PUT", "DELETE" ]   # fixed (no OPTIONS)
         AllowHeaders: [ "*" ]
 
   PetFn:
@@ -211,7 +213,8 @@ Resources:
           const json = (s,b,o="*")=>({statusCode:s,headers:{"Content-Type":"application/json","Access-Control-Allow-Origin":o,"Access-Control-Allow-Headers":"*"},body:JSON.stringify(b)});
           export const handler = async (event)=>{
             const origin="*";
-            if (event.requestContext.http?.method==="OPTIONS") return json(200,{},origin);
+            const method = event.requestContext.http?.method || event.httpMethod;
+            if (method==="OPTIONS") return json(200,{},origin);
             const userId = event.headers?.["x-user-id"] || event.headers?.["X-User-Id"];
             if(!userId) return json(400,{error:"missing x-user-id"},origin);
             const action = event.queryStringParameters?.action || "get";
@@ -247,7 +250,7 @@ Resources:
       AuthType: NONE
       Cors:
         AllowOrigins: [ !Ref CORSOrigin ]
-        AllowMethods: [ "GET", "POST", "OPTIONS" ]
+        AllowMethods: [ "GET", "POST" ]                     # fixed (no OPTIONS)
         AllowHeaders: [ "*" ]
 
   PresignFn:
@@ -272,7 +275,8 @@ Resources:
           const json = (s,b,o="*")=>({statusCode:s,headers:{"Content-Type":"application/json","Access-Control-Allow-Origin":o,"Access-Control-Allow-Headers":"*"},body:JSON.stringify(b)});
           export const handler = async (event)=>{
             const origin="*";
-            if (event.requestContext.http?.method==="OPTIONS") return json(200,{},origin);
+            const method = event.requestContext.http?.method || event.httpMethod;
+            if (method==="OPTIONS") return json(200,{},origin);
             const userId = event.headers?.["x-user-id"] || event.headers?.["X-User-Id"];
             if(!userId) return json(400,{error:"missing x-user-id"},origin);
             const { contentType="image/jpeg" } = JSON.parse(event.body||"{}");
@@ -290,7 +294,7 @@ Resources:
       AuthType: NONE
       Cors:
         AllowOrigins: [ !Ref CORSOrigin ]
-        AllowMethods: [ "POST", "OPTIONS" ]
+        AllowMethods: [ "POST" ]                            # fixed (no OPTIONS)
         AllowHeaders: [ "*" ]
 
 Outputs:
@@ -302,4 +306,3 @@ Outputs:
     Value: !GetAtt PresignFnUrl.FunctionUrl
   BucketName:
     Value: !Ref PhotosBucket
-
