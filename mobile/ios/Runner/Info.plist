@@ -45,5 +45,13 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Allow picking a photo to complete a task.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Allow taking a photo to complete a task.</string>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+	<key>NSAllowsArbitraryLoads</key><true/>
+	</dict>
 </dict>
 </plist>
