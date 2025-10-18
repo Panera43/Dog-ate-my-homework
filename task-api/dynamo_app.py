@@ -105,7 +105,7 @@ def complete_task(task_id):
     """Mark task as complete and save photo in DynamoDB"""
     try:
         # First check if task exists
-        response = table.get_item(Key={'id': task_id})
+        response = table.get_item(Key={'task-id': task_id})
         task = response.get('Item')
         
         if not task:
@@ -158,9 +158,9 @@ def seed_data():
     """Add some initial tasks to DynamoDB (for testing)"""
     try:
         sample_tasks = [
-            {"id": str(uuid.uuid4()), "title": "Feed Rex", "completed": False, "photo_url": None, "created_at": datetime.now().isoformat()},
-            {"id": str(uuid.uuid4()), "title": "Walk Buddy", "completed": False, "photo_url": None, "created_at": datetime.now().isoformat()},
-            {"id": str(uuid.uuid4()), "title": "Give treats", "completed": False, "photo_url": None, "created_at": datetime.now().isoformat()}
+            {"task-id": str(uuid.uuid4()), "title": "Feed Rex", "completed": False, "photo_url": None, "created_at": datetime.now().isoformat()},
+            {"task-id": str(uuid.uuid4()), "title": "Walk Buddy", "completed": False, "photo_url": None, "created_at": datetime.now().isoformat()},
+            {"task-id": str(uuid.uuid4()), "title": "Give treats", "completed": False, "photo_url": None, "created_at": datetime.now().isoformat()}
         ]
         
         for task in sample_tasks:
@@ -176,7 +176,7 @@ if __name__ == '__main__':
     print("📱 Flutter should connect to: http://YOUR_COMPUTER_IP:5000")
     print("\n🗄️  Using DynamoDB table: 'Tasks'")
     print("⚠️  Make sure:")
-    print("   1. DynamoDB table 'Tasks' exists with 'id' as partition key")
+    print("   1. DynamoDB table 'Tasks' exists with 'task-id' as partition key")
     print("   2. AWS credentials are configured (aws configure)")
     print("   3. You have permissions to access DynamoDB")
     print("\nEndpoints:")
