@@ -67,7 +67,7 @@ def get_tasks():
 def get_task(task_id):
     """Get a specific task from DynamoDB"""
     try:
-        response = table.get_item(Key={'id': task_id})
+        response = table.get_item(Key={'task-id': task_id})
         task = response.get('Item')
         
         if task:
@@ -86,7 +86,7 @@ def create_task():
             return jsonify({"error": "Title is required"}), 400
         
         new_task = {
-            "id": str(uuid.uuid4()),
+            "task-id": str(uuid.uuid4()),
             "title": data['title'],
             "completed": False,
             "photo_url": None,
@@ -117,7 +117,7 @@ def complete_task(task_id):
         
         # Update the task in DynamoDB
         table.update_item(
-            Key={'id': task_id},
+            Key={'task-id': task_id},
             UpdateExpression='SET completed = :completed, photo_url = :photo, completed_at = :completed_at',
             ExpressionAttributeValues={
                 ':completed': True,
@@ -127,7 +127,7 @@ def complete_task(task_id):
         )
         
         # Get the updated task
-        response = table.get_item(Key={'id': task_id})
+        response = table.get_item(Key={'task-id': task_id})
         updated_task = decimal_to_number(response.get('Item'))
         
         return jsonify({
@@ -142,12 +142,12 @@ def delete_task(task_id):
     """Delete a task from DynamoDB"""
     try:
         # Check if task exists first
-        response = table.get_item(Key={'id': task_id})
+        response = table.get_item(Key={'task-id': task_id})
         if 'Item' not in response:
             return jsonify({"error": "Task not found"}), 404
         
         # Delete from DynamoDB
-        table.delete_item(Key={'id': task_id})
+        table.delete_item(Key={'task-id': task_id})
         
         return jsonify({"message": "Task deleted successfully"}), 200
     except Exception as e:
