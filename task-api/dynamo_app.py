@@ -6,6 +6,18 @@ import uuid
 from datetime import datetime
 from decimal import Decimal
 
+# Add these debug lines:
+print("=" * 50)
+print("AWS Configuration Check:")
+session = boto3.Session()
+credentials = session.get_credentials()
+if credentials:
+    print(f"✅ Access Key ID: {credentials.access_key[:10]}...")
+    print(f"✅ Region: {session.region_name}")
+else:
+    print("❌ No credentials found!")
+print("=" * 50)
+
 app = Flask(__name__)
 CORS(app)
 
