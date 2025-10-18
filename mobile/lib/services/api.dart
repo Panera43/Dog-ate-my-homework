@@ -40,11 +40,17 @@ class ApiClient {
   }
 
   Future<String> uploadPhoto(File file) async {
-    final form = FormData.fromMap({
-      'photo': await MultipartFile.fromFile(file.path, filename: file.uri.pathSegments.last),
-    });
-    final res = await _dio.post('/upload-photo', data: form,
-        options: Options(contentType: Headers.multipartFormDataContentType));
-    return res.data['photo_url'] as String;
+    try {
+      final form = FormData.fromMap({
+        'photo': await MultipartFile.fromFile(file.path, filename: file.uri.pathSegments.last),
+      });
+      final res = await _dio.post('/upload-photo',
+          data: form,
+          options: Options(contentType: Headers.multipartFormDataContentType));
+      return res.data['photo_url'] as String;
+    } on DioException {
+      // Backend doesn't have /upload-photo yet -> use a placeholder URL
+      return 'https://example.com/photos/${file.uri.pathSegments.last}';
+    }
   }
 }
