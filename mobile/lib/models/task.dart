@@ -16,7 +16,7 @@ class Task {
   });
 
   factory Task.fromJson(Map<String, dynamic> j) => Task(
-        id: j['id'] as String,
+        id: (j['id'] ?? j['task-id']) as String,
         title: j['title'] as String,
         completed: (j['completed'] as bool?) ?? false,
         photoUrl: j['photo_url'] as String?,
