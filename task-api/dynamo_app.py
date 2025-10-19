@@ -6,24 +6,24 @@ import uuid
 from datetime import datetime
 from decimal import Decimal
 
-# Add these debug lines:
+
 print("=" * 50)
 print("AWS Configuration Check:")
 session = boto3.Session()
 credentials = session.get_credentials()
 if credentials:
-    print(f"✅ Access Key ID: {credentials.access_key[:10]}...")
-    print(f"✅ Region: {session.region_name}")
+    print(f"Access Key ID: {credentials.access_key[:10]}...")
+    print(f"Region: {session.region_name}")
 else:
-    print("❌ No credentials found!")
+    print("No credentials found!")
 print("=" * 50)
 
 app = Flask(__name__)
 CORS(app)
 
-# Initialize DynamoDB
-dynamodb = boto3.resource('dynamodb', region_name='us-east-1')  # Change region if needed
-table = dynamodb.Table('Tasks')  # Your DynamoDB table name
+# Initializing our DynamoDB
+dynamodb = boto3.resource('dynamodb', region_name='us-east-1')  
+table = dynamodb.Table('Tasks') 
 
 #intializing s3 client
 s3_client = boto3.client('s3', region_name='us-east-1')
@@ -39,7 +39,7 @@ def decimal_to_number(obj):
         return obj
 
 
-# Initialize S3 client
+#S3 client, endpoint which helps us in generating presigned URL for direct upload from Flutter
 @app.route('/get-presigned-url', methods=['POST'])
 def get_presigned_url():
     #Generates a presigned URL for direct S3 upload from Flutter
@@ -197,11 +197,11 @@ def seed_data():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    print("\n🚀 Task API Server with DynamoDB Starting...")
-    print("📍 Server will run at: http://localhost:5000")
-    print("📱 Flutter should connect to: http://YOUR_COMPUTER_IP:5000")
-    print("\n🗄️  Using DynamoDB table: 'Tasks'")
-    print("⚠️  Make sure:")
+    print("\n Task API Server with DynamoDB Starting...")
+    print(" Server will run at: http://localhost:5000")
+    print(" Flutter should connect to: http://YOUR_COMPUTER_IP:5000")
+    print("\n  Using DynamoDB table: 'Tasks'")
+    print("  Make sure:")
     print("   1. DynamoDB table 'Tasks' exists with 'task-id' as partition key")
     print("   2. AWS credentials are configured (aws configure)")
     print("   3. You have permissions to access DynamoDB")
