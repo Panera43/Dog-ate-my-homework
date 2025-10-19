@@ -51,7 +51,7 @@ Kibble is a productivity app, where the user creates tasks that need to be compl
 - **flask-cors** - Cross-origin resource sharing
 
 ### Cloud Infrastructure
-- **AWS DynamoDB** - NoSQL database for tasks and dog state
+- **AWS DynamoDB** - NoSQL database for tasks
   - `Tasks` table: Stores task data and photo URLs
 - **AWS S3** - Object storage for uploaded photos
 - **IAM** - Access management and permissions
