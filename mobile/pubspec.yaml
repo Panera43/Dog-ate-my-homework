@@ -38,6 +38,7 @@ dependencies:
   flutter_riverpod: ^3.0.3
   image_picker: ^1.2.0
   cached_network_image: ^3.4.1
+  shared_preferences: ^2.3.2
 
 dev_dependencies:
   flutter_test:
