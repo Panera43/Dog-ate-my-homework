@@ -10,7 +10,7 @@ Kibble is a productivity app, where the user creates tasks that need to be compl
          │ HTTP/REST API
          ↓
 ┌─────────────────┐
-│   Flask Server  │  ← Processing requests, Photo Processing
+│   Flask Server  │  ← Handling requests, Photo Processing
 │   (Python)      │
 └────────┬────────┘
          │ boto3
