@@ -48,47 +48,44 @@ class ApiClient {
   //   all "fields" + the file under field name "file"
   // If S3 returns 204/201, use s3_url as the photo URL.
   //
-  Future<String> uploadPhoto(File file) async {
-    // 1) Ask backend for presigned POST
-    final filename = file.uri.pathSegments.last;
-    final presignRes = await _dio.post(
-      '/get-presigned-url',
-      data: {'file_name': filename},
-    );
+    Future<String> uploadPhoto(File file) async {
+      // 1) Ask backend for a presigned POST
+      final fileName = file.uri.pathSegments.last;
+      final presign = await _dio.post(
+        '/get-presigned-url',
+        data: {'file_name': fileName},
+      );
 
-    final data = Map<String, dynamic>.from(presignRes.data);
-    final String uploadUrl = data['presigned_url'] as String;
-    final Map<String, dynamic> fields =
-        Map<String, dynamic>.from(data['fields'] as Map);
-    final String s3Url = data['s3_url'] as String;
+      final url = presign.data['presigned_url'] as String?; // S3 form endpoint
+      final fields = Map<String, dynamic>.from(presign.data['fields'] as Map);
+      final s3Url = presign.data['s3_url'] as String?;      // final public URL
 
-    // 2) Build multipart with ALL returned fields + file under 'file'
-    final form = FormData();
-    fields.forEach((k, v) => form.fields.add(MapEntry(k, v.toString())));
-    form.files.add(
-      MapEntry(
-        'file',
-        await MultipartFile.fromFile(
-          file.path,
-          filename: filename,
+      if (url == null || fields.isEmpty || s3Url == null) {
+        throw Exception('Invalid presigned URL response');
+      }
+
+      // 2) Build a multipart form: all fields FIRST, then the file with key "file"
+      final formMap = <String, dynamic>{...fields};
+      formMap['file'] = await MultipartFile.fromFile(
+        file.path,
+        filename: fileName,
+      );
+      final form = FormData.fromMap(formMap);
+
+      // 3) POST directly to S3
+      await Dio().post(
+        url,
+        data: form,
+        options: Options(
+          contentType: Headers.multipartFormDataContentType,
+          // S3 wants no custom headers besides multipart defaults
+          validateStatus: (code) => code != null && code >= 200 && code < 400,
         ),
-      ),
-    );
+      );
 
-    // 3) POST directly to S3. Use a raw Dio with NO baseUrl/headers.
-    final rawDio = Dio();
-    await rawDio.post(
-      uploadUrl,
-      data: form,
-      options: Options(
-        contentType: Headers.multipartFormDataContentType,
-        headers: {}, // no auth headers for S3 presigned POST
-        followRedirects: false,
-        validateStatus: (s) => s != null && s >= 200 && s < 400, // accept 2xx/3xx
-      ),
-    );
+      // 4) Return the public S3 URL for saving in DynamoDB
+      return s3Url;
+    }
 
-    // 4) Return the public S3 URL to store in your task
-    return s3Url;
-  }
+  
 }

@@ -32,7 +32,32 @@ final apiClientProvider = Provider<ApiClient>((ref) {
   return ApiClient(dio);
 });
 
-/// Task list (server-backed) using Riverpod's Notifier.
+/// ------------------- TOTAL KIBBLE FED (never decreases) -------------------
+const _totalFedKey = 'kibble_total_fed';
+
+class TotalFed extends Notifier<int> {
+  @override
+  int build() {
+    Future.microtask(_load);
+    return 0;
+  }
+
+  Future<void> _load() async {
+    final prefs = await SharedPreferences.getInstance();
+    state = prefs.getInt(_totalFedKey) ?? 0;
+  }
+
+  Future<void> increment() async {
+    final next = state + 1;
+    state = next;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_totalFedKey, next);
+  }
+}
+
+final totalFedProvider = NotifierProvider<TotalFed, int>(TotalFed.new);
+
+/// ------------------- Server-backed task list -------------------
 class TaskList extends Notifier<List<Task>> {
   late final ApiClient _api = ref.read(apiClientProvider);
 
@@ -55,24 +80,30 @@ class TaskList extends Notifier<List<Task>> {
     state = <Task>[t, ...state];
   }
 
+  /// Complete a task on the server and update local list.
+  /// We DO NOT decrease any counters on deletes; dog never shrinks.
   Future<void> complete(String id, {String? photoUrl}) async {
     final updated = await _api.completeTask(
       id,
       photoUrl: photoUrl ?? 'https://example.com/photos/placeholder.jpg',
     );
     state = [for (final t in state) if (t.id == id) updated else t];
+
+    // Bump total fed (non-decreasing).
+    await ref.read(totalFedProvider.notifier).increment();
   }
 
   Future<void> deleteById(String id) async {
     await _api.deleteTask(id);
     state = [for (final t in state) if (t.id != id) t];
+    // NOTE: intentionally do NOT decrement totalFed here.
   }
 }
 
 /// Public provider the UI watches (list of tasks).
 final taskListProvider = NotifierProvider<TaskList, List<Task>>(TaskList.new);
 
-/// ---------- Local "Hide" (archive) store so gallery keeps photos ----------
+/// ---------- Optional local "hide" store (kept for future use) ----------
 const _hiddenKey = 'hidden_task_ids';
 
 class HiddenIds extends Notifier<Set<String>> {

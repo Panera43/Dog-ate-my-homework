@@ -12,7 +12,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Dog Ate My Homework',
+      title: 'Kibble',
       theme: ThemeData(useMaterial3: true, colorSchemeSeed: Colors.indigo),
       home: const TasksScreen(),
       routes: {
