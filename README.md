@@ -1,4 +1,4 @@
-# Overview
+# Kibble -- My Dog Ate My Homework
 Kibble is a productivity app, where the user creates tasks that need to be completed. In order to complete a task, the user must upload an image of the task being done as "proof" of completion. Once the task is completed, it becomes converted to food (kibble) that can be fed to the dog for it to live and grow. The more kibble the dog is fed, the more it grows.
 
 ## Architecture
